@@ -26,9 +26,12 @@ jobs:
           activate-environment: pygmt-env
           auto-update-conda: true
 
-      - name: Install packages (mamba/conda-forge)
+      - name: Ensure mamba then install packages (conda-forge)
         shell: bash -l {0}
         run: |
+          # some runners don't have mamba in PATH; install to base first
+          conda install -n base -c conda-forge -y mamba || true
+          mamba --version || true
           mamba install -c conda-forge -y pygmt gmt python=3.11
 
       - name: Verify pygmt
