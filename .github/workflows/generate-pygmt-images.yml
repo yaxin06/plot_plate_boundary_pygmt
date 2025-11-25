@@ -35,10 +35,10 @@ jobs:
           mamba install -c conda-forge -y pygmt gmt python=3.11
 
       - name: Verify pygmt
-        run: python -c "import pygmt; print('pygmt', pygmt.__version__)"
+        run: conda run -n pygmt-env python -c "import pygmt; print('pygmt', pygmt.__version__)"
 
       - name: Generate images (script)
-        run: python scripts/generate_pygmt_images.py
+        run: conda run -n pygmt-env python scripts/generate_pygmt_images.py
 
       - name: Create PR with images (if changed)
         uses: peter-evans/create-pull-request@v5
