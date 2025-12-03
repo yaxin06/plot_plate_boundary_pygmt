@@ -320,8 +320,11 @@
         <!-- 主地圖 -->
         <div class="map-viewer">
           <div class="map-frame">
-            <!-- ⭐ 把這三張圖片放在和 index.html 同資料夾 -->
-            <img id="mapImage" src="africa_topography.png" alt="非洲板塊地形圖">
+            <!-- 預設顯示地形圖（來自 GitHub） -->
+            <img
+              id="mapImage"
+              src="https://raw.githubusercontent.com/yaxin06/plot_plate_boundary_pygmt/main/%E5%9C%B0%E5%BD%A2%E5%9C%96.png"
+              alt="非洲板塊地形圖">
           </div>
           <div id="mapCaption" class="map-caption">
             「地形圖」版本：使用 02m 解析度的 Earth relief，只看非洲板塊附近的地形起伏與海岸線。
@@ -375,6 +378,7 @@
           <button class="code-tab-btn" data-code="code3">程式碼 3：球面投影 + 熱點</button>
         </div>
 
+        <!-- code 1 -->
         <div id="code1" class="code-block active">
           <pre><code>import pygmt
 from pygmt.datasets import load_earth_relief
@@ -410,13 +414,17 @@ fig.coast(
 fig.colorbar(frame='af+l"Elevation (m)"')
 fig.savefig("africa_topography.png")
 fig.show()</code></pre>
+          <p class="code-note">這段程式碼對應左邊的「地形圖」版本，重點是 region、projection 與 grdimage 的使用。</p>
         </div>
 
+        <!-- code 2 -->
         <div id="code2" class="code-block">
           <pre><code>import pygmt
 from pygmt.datasets import load_earth_relief
 
 region = [-30, 60, -40, 40]
+
+# 地形網格
 grid = load_earth_relief(
     resolution="05m",
     region=region,
@@ -424,6 +432,7 @@ grid = load_earth_relief(
 )
 
 fig = pygmt.Figure()
+
 fig.basemap(
     region=region,
     projection="M18c",
@@ -436,6 +445,7 @@ fig.grdimage(
     shading=True
 )
 
+# 海岸線與陸海配色
 fig.coast(
     shorelines="1/0.3p,black",
     resolution="f",
@@ -443,4 +453,252 @@ fig.coast(
     water="lightblue"
 )
 
-*** End Patch
+# 假設有一個歷史強震檔 quakes_africa.txt：
+# lon lat depth mag
+fig.plot(
+    data="quakes_africa.txt",
+    style="c0.25c",
+    fill="red",
+    pen="0.25p,black"
+)
+
+fig.colorbar(frame='af+l"Elevation (m)"')
+fig.savefig("africa_topography_quakes.png")
+fig.show()</code></pre>
+          <p class="code-note">這段配合左邊「地形 + 歷史強震」圖，示範如何在地形上疊加強震位置。</p>
+        </div>
+
+        <!-- code 3 -->
+        <div id="code3" class="code-block">
+          <pre><code>import pygmt
+from pygmt.datasets import load_earth_relief
+
+# 使用較粗略解析度即可（球面概念圖）
+grid = load_earth_relief(
+    resolution="01d",
+    registration="pixel"
+)
+
+fig = pygmt.Figure()
+
+# 球面投影（例如 Orthographic，以非洲為中心）
+fig.basemap(
+    region="g",
+    projection="G20/5/14c",  # 中心經緯度可微調
+    frame=["g"]
+)
+
+fig.grdimage(
+    grid=grid,
+    cmap="geo",
+    shading=True
+)
+
+fig.coast(
+    shorelines="0.25p,black",
+    resolution="c"
+)
+
+# 使用官方 hotspots 檔示意熱點位置
+fig.plot(
+    data="@hotspots.txt",
+    style="c0.25c",
+    fill="orange",
+    pen="0.25p,black"
+)
+
+fig.colorbar(frame=['xaf', 'y+L"Relief (m)"'])
+fig.savefig("africa_globe_hotspots.png")
+fig.show()</code></pre>
+          <p class="code-note">這段對應「球面投影 + 熱點」圖，強調非洲在全球的位置與主要 hotspots 分布。</p>
+        </div>
+
+        <!-- 板塊邊界說明 -->
+        <div class="boundary-grid">
+          <div class="boundary-card">
+            <h3>東非裂谷系統 <span class="boundary-type">Divergent</span></h3>
+            <p>位於非洲板塊內部的張裂帶，被視為未來可能形成新洋盆的地方，常伴隨火山與淺層地震。</p>
+            <p class="boundary-note">可搭配地形圖觀察：裂谷區通常地形抬升且有線狀凹陷。</p>
+          </div>
+          <div class="boundary-card">
+            <h3>大西洋中洋脊（非洲段） <span class="boundary-type">Divergent</span></h3>
+            <p>非洲板塊與南、北美板塊之間的張裂型邊界，新洋壓出現於此。</p>
+            <p class="boundary-note">在「地形圖」中為海底隆起的長帶狀構造。</p>
+          </div>
+          <div class="boundary-card">
+            <h3>地中海-阿爾卑斯帶 <span class="boundary-type">Convergent</span></h3>
+            <p>非洲板塊向北與歐亞板塊碰撞，形成褶皺造山與淺-中深度地震。</p>
+            <p class="boundary-note">在疊加強震的圖上，可看到密集震央分布。</p>
+          </div>
+        </div>
+
+        <!-- 小小測驗 -->
+        <div class="quiz">
+          <div class="quiz-label">小測驗：<br>「東非裂谷」主要屬於哪一種板塊邊界類型？</div>
+          <select id="quizSelect" class="quiz-select">
+            <option value="">請選擇答案</option>
+            <option value="convergent">聚合型（Convergent）</option>
+            <option value="divergent">張裂型（Divergent）</option>
+            <option value="transform">保守型（Transform）</option>
+          </select>
+          <button id="quizBtn" class="quiz-btn">查看結果</button>
+          <div id="quizResult" class="quiz-result"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      PyGMT 非洲板塊互動教學示範頁面｜可自行修改文字與圖片作為課堂教材或報告展示
+    </footer>
+  </div>
+
+  <script>
+    // 1. 地圖 tab 對應的圖片與說明
+    const mapConfig = {
+      topo: {
+        src: "https://raw.githubusercontent.com/yaxin06/plot_plate_boundary_pygmt/main/%E5%9C%B0%E5%BD%A2%E5%9C%96.png",
+        caption: "「地形圖」版本：使用 02m 解析度的 Earth relief，只看非洲板塊附近的地形起伏與海岸線。"
+      },
+      quakes: {
+        src: "https://raw.githubusercontent.com/yaxin06/plot_plate_boundary_pygmt/main/%E8%9E%A2%E5%B9%95%E6%93%B7%E5%8F%96%E7%95%AB%E9%9D%A2%202025-12-03%20143817.png",
+        caption: "「地形 + 歷史強震」版本：在同一個非洲板塊區域上疊加歷史強震分布，用來觀察板塊邊界與震央的關係。"
+      },
+      globe: {
+        src: "https://raw.githubusercontent.com/yaxin06/plot_plate_boundary_pygmt/main/%E8%9E%A2%E5%B9%95%E6%93%B7%E5%8F%96%E7%95%AB%E9%9D%A2%202025-12-03%20143543.png",
+        caption: "「球面投影 + 熱點」版本：用球面投影呈現非洲與全球位置，並標出主要熱點（hotspots）。"
+      }
+    };
+
+    const mapImage = document.getElementById("mapImage");
+    const mapCaption = document.getElementById("mapCaption");
+    const mapTabButtons = document.querySelectorAll(".map-tab-btn");
+
+    mapTabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.map;
+        const cfg = mapConfig[key];
+
+        // 切換 active 樣式
+        mapTabButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        // 換圖 + 換說明
+        if (cfg) {
+          mapImage.src = cfg.src;
+          mapImage.alt = cfg.caption;
+          mapCaption.textContent = cfg.caption;
+        }
+      });
+    });
+
+    // 2. 程式碼區塊 tab 切換
+    const codeTabButtons = document.querySelectorAll(".code-tab-btn");
+    const codeBlocks = document.querySelectorAll(".code-block");
+
+    codeTabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.dataset.code;
+
+        codeTabButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        codeBlocks.forEach(block => {
+          block.classList.toggle("active", block.id === targetId);
+        });
+      });
+    });
+
+    // 3. 板塊選單文字說明
+    const plateData = {
+      Africa: {
+        title: "Africa（非洲板塊）",
+        text: "非洲板塊是面積最大的岩石圈板塊之一，包含非洲大陸與部分周邊海洋地殼。中央多為穩定的陸塊，但在東非裂谷、紅海與大西洋中洋脊一帶，可看到明顯的張裂型邊界地形與火山活動。"
+      },
+      Pacific: {
+        title: "Pacific（太平洋板塊）",
+        text: "太平洋板塊大部分為海洋地殼，周圍環太平洋帶為聚合型邊界，常伴隨深層地震及弧後火山活動，是地震與火山最活躍的區域之一。"
+      },
+      Eurasia: {
+        title: "Eurasia（歐亞板塊）",
+        text: "歐亞板塊包含歐洲與亞洲大部分陸塊，與非洲、印度等板塊碰撞形成阿爾卑斯－喜馬拉雅造山帶。"
+      },
+      NorthAmerica: {
+        title: "North America（北美板塊）",
+        text: "北美板塊包含北美洲與部分大西洋海底，與太平洋板塊之間的聖安地列斯斷層是典型保守型邊界。"
+      },
+      SouthAmerica: {
+        title: "South America（南美板塊）",
+        text: "在其西側與納斯卡板塊聚合，造成安地斯山脈的隆升與頻繁的淺中深層地震。"
+      },
+      Nazca: {
+        title: "Nazca（納斯卡板塊）",
+        text: "納斯卡板塊向東隱沒到南美板塊之下，是形成安地斯山脈與秘魯－智利海溝的重要板塊。"
+      },
+      Cocos: {
+        title: "Cocos（科科斯板塊）",
+        text: "位於中美洲外海的海洋板塊，向東隱沒到北美與加勒比板塊下方，造成中美洲火山弧。"
+      },
+      Philippine: {
+        title: "Philippine（菲律賓海板塊）",
+        text: "位於西太平洋的複雜板塊，周圍有多條隱沒帶與島弧系統，例如日本與菲律賓群島。"
+      },
+      India: {
+        title: "India（印度板塊）",
+        text: "印度板塊向北與歐亞板塊碰撞，形成喜馬拉雅山與青藏高原，是經典的陸陸碰撞案例。"
+      },
+      Australia: {
+        title: "Australia（澳洲板塊）",
+        text: "澳洲板塊多為陸塊與鄰近海洋地殼，向北與亞歐帶碰撞造成印尼一帶複雜的板塊構造。"
+      },
+      Antarctica: {
+        title: "Antarctica（南極板塊）",
+        text: "幾乎完全被冰蓋覆蓋的板塊，周圍以張裂型中洋脊與其他板塊相接。"
+      },
+      Caribbean: {
+        title: "Caribbean（加勒比板塊）",
+        text: "小型板塊，位於北美與南美板塊之間，周圍有多條隱沒帶與島弧火山。"
+      },
+      Scotia: {
+        title: "Scotia（斯科舍板塊）",
+        text: "位於南大西洋近南極一帶的小板塊，周邊有轉形斷層與隱沒帶。"
+      },
+      JuanDeFuca: {
+        title: "Juan de Fuca（胡安．德富卡板塊）",
+        text: "位於北美西岸的小型海洋板塊，向東隱沒至北美板塊下，是美加西岸地震與火山活動的來源之一。"
+      }
+    };
+
+    const plateSelect = document.getElementById("plateSelect");
+    const plateTitle = document.getElementById("plateTitle");
+    const plateText = document.getElementById("plateText");
+
+    plateSelect.addEventListener("change", () => {
+      const val = plateSelect.value;
+      const info = plateData[val] || plateData["Africa"];
+      plateTitle.textContent = info.title;
+      plateText.textContent = info.text;
+    });
+
+    // 4. 小測驗：東非裂谷邊界類型
+    const quizSelect = document.getElementById("quizSelect");
+    const quizBtn = document.getElementById("quizBtn");
+    const quizResult = document.getElementById("quizResult");
+
+    quizBtn.addEventListener("click", () => {
+      const ans = quizSelect.value;
+      if (!ans) {
+        quizResult.textContent = "請先選擇一個答案喔～";
+        quizResult.className = "quiz-result ng";
+        return;
+      }
+      if (ans === "divergent") {
+        quizResult.textContent = "✅ 正確！東非裂谷是典型的「張裂型」（Divergent）板塊邊界。";
+        quizResult.className = "quiz-result ok";
+      } else {
+        quizResult.textContent = "❌ 不是喔，東非裂谷屬於張裂型（Divergent），再想想看～";
+        quizResult.className = "quiz-result ng";
+      }
+    });
+  </script>
+</body>
+</html>
